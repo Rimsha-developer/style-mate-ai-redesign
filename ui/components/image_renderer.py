@@ -19,7 +19,7 @@ import streamlit as st
 
 @st.cache_data(max_entries=1500, show_spinner=False)
 def get_crisp_image_base64(image_path: str, target_width: int = 240, target_height: int = 320) -> str:
-    """Load image from disk, apply high-quality Lanczos super-sampling if thumbnail, and return PNG base64."""
+    """Load image from disk, apply high-quality Lanczos super-sampling if thumbnail, and return JPEG base64."""
     if not os.path.exists(image_path):
         return ""
 
@@ -36,9 +36,12 @@ def get_crisp_image_base64(image_path: str, target_width: int = 240, target_heig
                 im = im.resize((new_w, new_h), resample=Image.Resampling.LANCZOS)
                 # Apply subtle unsharp enhancement to define crisp fabric textures and edges
                 im = im.filter(ImageFilter.UnsharpMask(radius=1.2, percent=100, threshold=2))
+            elif w > target_width * 2 or h > target_height * 2:
+                # Constrain oversize photos to avoid massive base64 network payloads
+                im.thumbnail((target_width * 2, target_height * 2), Image.Resampling.LANCZOS)
 
             buf = io.BytesIO()
-            im.save(buf, format="PNG", optimize=True)
+            im.save(buf, format="JPEG", quality=88)
             return base64.b64encode(buf.getvalue()).decode("utf-8")
     except Exception:
         return ""
@@ -65,7 +68,7 @@ def render_crisp_garment_html(
     <div style="height:{container_height}px;background:{bg_color};border:1px solid #E8E3DA;border-radius:10px;
                 display:flex;align-items:center;justify-content:center;padding:12px;overflow:hidden;margin-bottom:8px;
                 box-shadow:inset 0 1px 3px rgba(0,0,0,0.02);">
-        <img src="data:image/png;base64,{b64}" 
+        <img src="data:image/jpeg;base64,{b64}" 
              style="max-height:100%;max-width:{max_width}px;object-fit:contain;
                     image-rendering:-webkit-optimize-contrast;image-rendering:crisp-edges;
                     filter:drop-shadow(0 2px 8px rgba(28,25,23,0.08));" />
@@ -93,7 +96,7 @@ def render_inspector_garment_html(
     <div style="height:{max_height}px;background:{bg_color};border:1px solid #E8E3DA;border-radius:12px;
                 display:flex;align-items:center;justify-content:center;padding:18px;overflow:hidden;
                 box-shadow:inset 0 1px 4px rgba(0,0,0,0.03);">
-        <img src="data:image/png;base64,{b64}" 
+        <img src="data:image/jpeg;base64,{b64}" 
              style="max-height:100%;max-width:{max_width}px;object-fit:contain;
                     image-rendering:-webkit-optimize-contrast;image-rendering:crisp-edges;
                     filter:drop-shadow(0 4px 16px rgba(28,25,23,0.12));" />

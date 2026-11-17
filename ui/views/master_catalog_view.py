@@ -26,8 +26,17 @@ PAGE_SIZE = 12
 # Helpers
 # ---------------------------------------------------------------------------
 
+@st.cache_data(max_entries=1000, show_spinner=False)
+def _image_b64_cached(path_str: str) -> str:
+    try:
+        p = pathlib.Path(path_str)
+        return base64.b64encode(p.read_bytes()).decode()
+    except Exception:
+        return ""
+
+
 def _image_b64(path: pathlib.Path) -> str:
-    return base64.b64encode(path.read_bytes()).decode()
+    return _image_b64_cached(str(path))
 
 
 def _gender_color(g: str) -> str:
@@ -120,7 +129,8 @@ def _render_card(item: dict, img_path, idx: int, page_key: str = ""):
                         catalog_item_path=str(img_path),
                         type_name=name or subcategory or category,
                         slot=item.get("slot", "top"),
-                        usage=occasion or "Casual"
+                        usage=occasion or "Casual",
+                        gender=item.get("gender", "Unisex")
                     )
                     st.toast(f"✓ {display_name} added to wardrobe!", icon="👗")
                 except Exception as e:
@@ -229,7 +239,8 @@ def _render_inspector(item: dict):
                             catalog_item_path=str(img_path),
                             type_name=name or subcategory or category,
                             slot=item.get("slot", "top"),
-                            usage=occasion or "Casual"
+                            usage=occasion or "Casual",
+                            gender=item.get("gender", "Unisex")
                         )
                         st.success("Added to My Wardrobe!")
                     except Exception as e:

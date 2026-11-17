@@ -109,7 +109,8 @@ def _render_catalog_card(item: dict, col, index: int):
                         catalog_item_path=file_path,
                         type_name=item_type,
                         slot=item.get("slot", "top"),
-                        usage=usage
+                        usage=usage,
+                        gender=item.get("gender", "Unisex")
                     )
                     st.success(f"Added #{item_id} to Wardrobe!")
                 except Exception as e:
@@ -182,7 +183,8 @@ def _render_catalog_inspector(item: dict):
                         catalog_item_path=file_path,
                         type_name=item_type,
                         slot=item.get("slot", "top"),
-                        usage=usage
+                        usage=usage,
+                        gender=item.get("gender", "Unisex")
                     )
                     st.success(f"✓ #{item_id} {item_type} successfully added to your personal wardrobe!")
                 except Exception as e:

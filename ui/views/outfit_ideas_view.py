@@ -27,6 +27,11 @@ from services import master_catalog_service as mcs
 ROOT = Path(__file__).resolve().parent.parent.parent
 MASTER_JSON = ROOT / "catalog" / "master_products.json"
 
+
+def _outfit_id_key(pieces: List[Dict[str, Any]]) -> frozenset:
+    """Order-independent ID set of an outfit's pieces."""
+    return frozenset(str(p.get("id") or p.get("path") or id(p)) for p in pieces)
+
 # ---------------------------------------------------------------------------
 # GENDER CONSTANTS
 # ---------------------------------------------------------------------------
@@ -64,11 +69,17 @@ def _gender_badge_html(gender_raw: str) -> str:
 # HELPERS
 # ---------------------------------------------------------------------------
 
-def _image_b64(path: Path) -> str:
+@st.cache_data(max_entries=1000, show_spinner=False)
+def _image_b64_cached(path_str: str) -> str:
     try:
-        return base64.b64encode(path.read_bytes()).decode()
+        p = Path(path_str)
+        return base64.b64encode(p.read_bytes()).decode()
     except Exception:
         return ""
+
+
+def _image_b64(path: Path) -> str:
+    return _image_b64_cached(str(path))
 
 
 def _resolve_hd_image_path(piece: dict) -> Path:
@@ -95,6 +106,7 @@ def _resolve_hd_image_path(piece: dict) -> Path:
 # MASTER 746-ITEM DATAFRAME
 # ---------------------------------------------------------------------------
 
+@st.cache_data(show_spinner=False)
 def _load_master_df() -> pd.DataFrame:
     """
     Build a unified 746-row DataFrame from master_products.json enriched with
@@ -499,6 +511,7 @@ def _render_outfit_card(
                             type_name=p.get("type", "Garment"),
                             slot=p.get("slot", "top"),
                             usage=p.get("usage", "Casual"),
+                            gender=p.get("gender", "Unisex"),
                         )
                         count_saved += 1
                     except Exception:

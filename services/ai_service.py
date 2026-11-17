@@ -39,6 +39,15 @@ if str(_ROOT_DIR) not in sys.path:
 # Import unmodified original engine
 import engine
 
+try:
+    import streamlit as st
+    cache_resource = st.cache_resource
+except Exception:
+    def cache_resource(*args, **kwargs):
+        def decorator(f):
+            return f
+        return decorator
+
 # ---------------------------------------------------------------------------
 # 2. SINGLETON FACTORY & ENGINE CACHING
 # ---------------------------------------------------------------------------
@@ -46,6 +55,7 @@ _CLASSIFIER_INSTANCE: Optional[engine.Classifier] = None
 _WARDROBE_INSTANCE: Optional[engine.Wardrobe] = None
 _CATALOG_INSTANCE: Optional[engine.Catalog] = None
 
+@cache_resource(show_spinner=False)
 def get_classifier(model_dir: str = "models") -> engine.Classifier:
     """Retrieve or initialize singleton instance of original Classifier."""
     global _CLASSIFIER_INSTANCE
@@ -57,7 +67,10 @@ def get_classifier(model_dir: str = "models") -> engine.Classifier:
     return _CLASSIFIER_INSTANCE
 
 def get_wardrobe(wardrobe_dir: str = "wardrobe") -> engine.Wardrobe:
-    """Retrieve or initialize singleton instance of original Wardrobe."""
+    """Retrieve or initialize singleton instance of original Wardrobe.
+    Note: Intentionally not cached with Streamlit cache to ensure live multi-user isolation
+    and instant synchronization with filesystem modifications.
+    """
     global _WARDROBE_INSTANCE
     if _WARDROBE_INSTANCE is None:
         wd_path = Path(wardrobe_dir)
@@ -66,6 +79,7 @@ def get_wardrobe(wardrobe_dir: str = "wardrobe") -> engine.Wardrobe:
         _WARDROBE_INSTANCE = engine.Wardrobe(str(wd_path))
     return _WARDROBE_INSTANCE
 
+@cache_resource(show_spinner=False)
 def get_catalog(img_dir: str = "catalog/images", csv_path: str = "catalog/catalog.csv", progress_cb=None) -> engine.Catalog:
     """Load and cache the catalog, ensuring cross-platform path normalization."""
     global _CATALOG_INSTANCE
@@ -151,7 +165,13 @@ def list_catalog_items(
         })
     return items
 
-def add_catalog_item_to_wardrobe(catalog_item_path: str, type_name: str, slot: str, usage: str) -> Dict[str, Any]:
+def add_catalog_item_to_wardrobe(
+    catalog_item_path: str,
+    type_name: str,
+    slot: str,
+    usage: str,
+    gender: str = "Unisex"
+) -> Dict[str, Any]:
     """Copy a catalog garment into the user's personal wardrobe."""
     p = Path(catalog_item_path)
     if not p.is_absolute():
@@ -164,7 +184,8 @@ def add_catalog_item_to_wardrobe(catalog_item_path: str, type_name: str, slot: s
         type_name=type_name,
         slot=slot,
         occasion=usage,
-        confidence=1.0
+        confidence=1.0,
+        gender=gender
     )
 
 # ---------------------------------------------------------------------------
@@ -406,39 +427,55 @@ def generate_diverse_outfit_combinations(
     if not bases:
         return [], 0
 
-    import itertools
+    # Shuffle bases with seed so fresh candidate combinations are prioritized on each refresh click
+    rng = np.random.default_rng(seed)
+    shuffled_bases = list(bases)
+    rng.shuffle(shuffled_bases)
+
+    # Accessory pools (pad with None if empty)
+    shoe_choices = shoes_pool if shoes_pool else [None]
+    bag_choices = bags_pool if bags_pool else [None]
+    outer_choices = outers_pool if outers_pool else [None]
+
     raw_count = 0
     seen_outfit_ids: set = set()
     seen_content_sigs: set = set()
     all_outfits: List[Tuple[int, List[Dict[str, Any]]]] = []
 
-    # Step 3: Combinatorial exploration across base + compatible accessories
-    for base in bases:
-        for shoe, bag, outer in itertools.product(shoes_opts, bags_opts, outers_opts):
-            pieces = list(base)
+    # Step 3: Interactive combinatorial exploration (capped bases & accessory branching for sub-second response)
+    for base in shuffled_bases[:40]:
+        for shoe in shoe_choices[:4]:
+            for bag in bag_choices[:3]:
+                pieces = list(base)
+                if shoe is not None:
+                    score_s = np.mean([engine.pair_score(shoe, p) for p in pieces])
+                    if score_s >= 65:
+                        pieces = pieces + [shoe]
+                if outer_choices[0] is not None:
+                    for outer in outer_choices[:3]:
+                        score_o = np.mean([engine.pair_score(outer, p) for p in pieces])
+                        if score_o >= 65:
+                            pieces = pieces + [outer]
+                            break
+                if bag is not None:
+                    score_b = np.mean([engine.pair_score(bag, p) for p in pieces])
+                    if score_b >= 65:
+                        pieces = pieces + [bag]
 
-            # Test extras compatibility (pair_score >= 65 against base pieces)
-            for item in (outer, shoe, bag):
-                if item is None:
+                if len(pieces) < 2:
                     continue
-                mean_score = float(np.mean([engine.pair_score(item, p) for p in pieces]))
-                if mean_score >= 65:
-                    pieces.append(item)
 
-            if len(pieces) < 2:
-                continue
+                raw_count += 1
 
-            raw_count += 1
+                # Strict Deduplication: order-independent ID set & visual content signature
+                id_key = _outfit_id_key(pieces)
+                content_key = _outfit_content_key(pieces)
 
-            # Strict Deduplication: order-independent ID set & visual content signature
-            id_key = _outfit_id_key(pieces)
-            content_key = _outfit_content_key(pieces)
+                if id_key in seen_outfit_ids or content_key in seen_content_sigs:
+                    continue
 
-            if id_key in seen_outfit_ids or content_key in seen_content_sigs:
-                continue
-
-            seen_outfit_ids.add(id_key)
-            seen_content_sigs.add(content_key)
+                seen_outfit_ids.add(id_key)
+                seen_content_sigs.add(content_key)
 
             # Scoring using original Style Mate engine formulas
             pair_scores = [
@@ -520,19 +557,24 @@ def add_garment_to_wardrobe(
     # Canonical slot resolution
     resolved_slot = resolve_garment_slot(type_name) or slot
 
-    # Duplicate prevention: if identical type, slot, occasion and similar color was added recently, return existing
-    dom_rgb = engine.dominant_rgb(rgb_image)
-    col_info = engine.color_info(dom_rgb)
-    for existing in wd.items:
-        if (existing.get("type") == type_name and
-            existing.get("slot") == resolved_slot and
-            existing.get("usage") == occasion and
-            existing.get("color") == col_info["color"]):
-            # Check RGB distance
-            e_rgb = existing.get("rgb", [0, 0, 0])
-            if np.mean(np.abs(np.array(e_rgb) - np.array(dom_rgb))) < 15:
-                # Return already saved item to avoid duplicate on multi-click
-                return existing
+    # Duplicate prevention: only extract color if candidate with identical type & slot exists
+    has_candidate = any(
+        existing.get("type") == type_name and existing.get("slot") == resolved_slot and existing.get("usage") == occasion
+        for existing in wd.items
+    )
+    if has_candidate:
+        dom_rgb = engine.dominant_rgb(rgb_image)
+        col_info = engine.color_info(dom_rgb)
+        for existing in wd.items:
+            if (existing.get("type") == type_name and
+                existing.get("slot") == resolved_slot and
+                existing.get("usage") == occasion and
+                existing.get("color") == col_info["color"]):
+                # Check RGB distance
+                e_rgb = existing.get("rgb", [0, 0, 0])
+                if np.mean(np.abs(np.array(e_rgb) - np.array(dom_rgb))) < 15:
+                    # Return already saved item to avoid duplicate on multi-click
+                    return existing
 
     it = wd.add(rgb_image, type_name, resolved_slot, occasion, confidence)
     it["gender"] = gender if gender in {"Women", "Men", "Unisex"} else "Unisex"
