@@ -1,0 +1,190 @@
+[
+  {
+    "id": "f474d6be",
+    "path": "demo_data/wardrobe/f474d6be.jpg",
+    "type": "Silk Blend White Top",
+    "slot": "top",
+    "usage": "Casual",
+    "conf": 1.0,
+    "worn": 0,
+    "color": "white",
+    "neutral": true,
+    "hue": 0.8529411764705882,
+    "rgb": [
+      238,
+      221,
+      236
+    ],
+    "gender": "Women",
+    "name": "Silk Blend White Top"
+  },
+  {
+    "id": "5ab01577",
+    "path": "demo_data/wardrobe/5ab01577.jpg",
+    "type": "Tshirts",
+    "slot": "top",
+    "usage": "Casual",
+    "conf": 1.0,
+    "worn": 0,
+    "color": "pink",
+    "neutral": false,
+    "hue": 0.8688524590163934,
+    "rgb": [
+      107,
+      46,
+      94
+    ],
+    "gender": "Men",
+    "name": "Tshirts"
+  },
+  {
+    "id": "b9048282",
+    "path": "demo_data/wardrobe/b9048282.jpg",
+    "type": "Slim Fit Denim Jeans",
+    "slot": "bottom",
+    "usage": "Casual",
+    "conf": 1.0,
+    "worn": 0,
+    "color": "denim",
+    "neutral": true,
+    "hue": 0.5454545454545455,
+    "rgb": [
+      42,
+      50,
+      53
+    ],
+    "gender": "Unisex",
+    "name": "Slim Fit Denim Jeans"
+  },
+  {
+    "id": "7dbee2b0",
+    "path": "demo_data/wardrobe/7dbee2b0.jpg",
+    "type": "Tailored Beige Trousers",
+    "slot": "bottom",
+    "usage": "Formal",
+    "conf": 1.0,
+    "worn": 0,
+    "color": "red",
+    "neutral": false,
+    "hue": 0.024691358024691374,
+    "rgb": [
+      121,
+      98,
+      94
+    ],
+    "gender": "Women",
+    "name": "Tailored Beige Trousers"
+  },
+  {
+    "id": "8214eebd",
+    "path": "demo_data/wardrobe/8214eebd.jpg",
+    "type": "Classic Beige Flats",
+    "slot": "shoes",
+    "usage": "Casual",
+    "conf": 1.0,
+    "worn": 0,
+    "color": "beige",
+    "neutral": true,
+    "hue": 0.08730158730158728,
+    "rgb": [
+      215,
+      185,
+      152
+    ],
+    "gender": "Women",
+    "name": "Classic Beige Flats"
+  },
+  {
+    "id": "5b3c81e2",
+    "path": "demo_data/wardrobe/5b3c81e2.jpg",
+    "type": "Casual White Sneakers",
+    "slot": "shoes",
+    "usage": "Casual",
+    "conf": 1.0,
+    "worn": 0,
+    "color": "white",
+    "neutral": true,
+    "hue": 0.09523809523809552,
+    "rgb": [
+      223,
+      220,
+      216
+    ],
+    "gender": "Unisex",
+    "name": "Casual White Sneakers"
+  },
+  {
+    "id": "e961f47c",
+    "path": "demo_data/wardrobe/e961f47c.jpg",
+    "type": "Classic White Denim Jacket",
+    "slot": "outer",
+    "usage": "Casual",
+    "conf": 1.0,
+    "worn": 0,
+    "color": "white",
+    "neutral": true,
+    "hue": 0.5802469135802469,
+    "rgb": [
+      204,
+      218,
+      231
+    ],
+    "gender": "Unisex",
+    "name": "Classic White Denim Jacket"
+  },
+  {
+    "id": "3e2ddfcf",
+    "path": "demo_data/wardrobe/3e2ddfcf.jpg",
+    "type": "Denim Canvas Handbag",
+    "slot": "bag",
+    "usage": "Casual",
+    "conf": 1.0,
+    "worn": 0,
+    "color": "navy",
+    "neutral": true,
+    "hue": 0.6481481481481483,
+    "rgb": [
+      35,
+      37,
+      53
+    ],
+    "gender": "Women",
+    "name": "Denim Canvas Handbag"
+  },
+  {
+    "id": "ad87e632",
+    "path": "demo_data/wardrobe/ad87e632.jpg",
+    "type": "Heels",
+    "slot": "shoes",
+    "usage": "Casual",
+    "conf": 0.6075643891567405,
+    "worn": 0,
+    "color": "black",
+    "neutral": true,
+    "hue": 0.0,
+    "rgb": [
+      13,
+      13,
+      13
+    ]
+  },
+  {
+    "id": "23fa9f50",
+    "path": "demo_data/wardrobe/23fa9f50.jpg",
+    "type": "Dresses",
+    "slot": "dress",
+    "usage": "Casual",
+    "conf": 0.8098485518088134,
+    "worn": 0,
+    "color": "black",
+    "neutral": true,
+    "hue": 0.052083333333333336,
+    "rgb": [
+      29,
+      18,
+      13
+    ],
+    "gender": "Women",
+    "name": "Dresses"
+  }
+]
